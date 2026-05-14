@@ -11,6 +11,7 @@ IV_SIZE = 16
 VALID_KEY_SIZES = (16, 32)
 
 
+
 def pad(data: bytes) -> bytes:
     """Apply PKCS#7 padding for AES block size."""
     pad_len = BLOCK_SIZE - (len(data) % BLOCK_SIZE)
