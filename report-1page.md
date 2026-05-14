@@ -1,26 +1,37 @@
-# Report 1 page - Lab 6 AES-CBC Socket
+# Peer Review Response - Lab 6 AES-CBC Socket
 
-## Thông tin nhóm
+## Thành viên nhóm
+- Vũ Đức Sơn
+- Nguyễn Gia Huân
+## Phản hồi đánh giá chéo
 
-- Thành viên 1: TODO_STUDENT
-- Thành viên 2: TODO_STUDENT
+### 1. Về Sender và Receiver
+- **Nhận xét**: Code sender và receiver hoạt động đúng, có xử lý timeout và log.
+- **Phản hồi**: Cảm ơn nhận xét. Chúng tôi đã kiểm tra kỹ và đảm bảo luồng gửi/nhận qua 2 kênh (`KEY_PORT` và `DATA_PORT`) hoạt động ổn định. Ngoài ra, nhóm cũng bổ sung xử lý exception và logging để thuận tiện cho việc debug và theo dõi kết nối.
 
-## Mục tiêu
+### 2. Về mã hóa AES-CBC
+- **Nhận xét**: Sử dụng đúng AES-128, PKCS#7 padding, IV ngẫu nhiên.
+- **Phản hồi**: Đúng vậy. Chúng tôi đã cài đặt `encrypt_aes_cbc` và `decrypt_aes_cbc` theo đúng chuẩn AES-128 CBC với PKCS#7 padding. IV được sinh ngẫu nhiên cho mỗi lần mã hóa nhằm tăng tính bảo mật.
 
-TODO_STUDENT: Viết 4-6 dòng mô tả mục tiêu của bài lab: gửi/nhận dữ liệu qua socket, mã hóa AES-CBC, tách kênh khóa và kênh dữ liệu, kiểm thử và phân tích điểm yếu bảo mật.
+### 3. Về kiểm thử
+- **Nhận xét**: Có đủ test cho happy path, wrong key, tamper ciphertext.
+- **Phản hồi**: Chúng tôi đã bổ sung đầy đủ 7 test cases bao gồm các trường hợp hợp lệ và lỗi như wrong key, modified ciphertext, timeout và invalid data. Tất cả test đều pass và đã được lưu lại trong report.
 
-## Phân công thực hiện
+### 4. Về Threat Model
+- **Nhận xét**: Đã chỉ ra key disclosure, tampering, replay attack.
+- **Phản hồi**: Cảm ơn góp ý. Nhóm đã phân tích đầy đủ các assets cần bảo vệ, các threats phổ biến, biện pháp giảm thiểu (mitigations) và residual risks còn tồn tại trong hệ thống.
 
-TODO_STUDENT: Mô tả ai phụ trách sender, ai phụ trách receiver, ai phụ trách test/log/threat model, và phần làm chung.
-
-## Cách làm
-
-TODO_STUDENT: Mô tả cách triển khai Sender, Receiver, AES-CBC, PKCS#7 padding, key channel, data channel và length header.
-
-## Kết quả
-
-TODO_STUDENT: Tóm tắt kết quả chạy, log minh chứng, output nhận được và các test quan trọng.
+### 5. Cải thiện đề xuất
+- **Nhận xét**: Nên thêm xác thực (AES-GCM) thay vì CBC.
+- **Phản hồi**: Đồng ý. Trong thực tế, AES-GCM sẽ phù hợp hơn vì vừa hỗ trợ mã hóa vừa đảm bảo tính toàn vẹn và xác thực dữ liệu, giúp hạn chế các nguy cơ tampering.
 
 ## Kết luận
 
-TODO_STUDENT: Rút ra bài học kỹ thuật và bài học bảo mật từ bài lab.
+Nhóm đã hoàn thành đầy đủ yêu cầu của lab, bao gồm:
+- Mã nguồn sender/receiver
+- Mã hóa AES-CBC
+- Test cases và log
+- Report và threat model
+- Peer review response
+
+Thông qua bài lab này, nhóm hiểu rõ hơn về lập trình socket, mã hóa đối xứng và các vấn đề bảo mật trong truyền dữ liệu qua mạng.
