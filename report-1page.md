@@ -1,37 +1,74 @@
-# Peer Review Response - Lab 6 AES-CBC Socket
 
-## Thành viên nhóm
-- Vũ Đức Sơn
-- Nguyễn Gia Huân
-## Phản hồi đánh giá chéo
+# Report 1 page - Lab 6 AES-CBC Socket
 
-### 1. Về Sender và Receiver
-- **Nhận xét**: Code sender và receiver hoạt động đúng, có xử lý timeout và log.
-- **Phản hồi**: Cảm ơn nhận xét. Chúng tôi đã kiểm tra kỹ và đảm bảo luồng gửi/nhận qua 2 kênh (`KEY_PORT` và `DATA_PORT`) hoạt động ổn định. Ngoài ra, nhóm cũng bổ sung xử lý exception và logging để thuận tiện cho việc debug và theo dõi kết nối.
+## Thông tin nhóm
 
-### 2. Về mã hóa AES-CBC
-- **Nhận xét**: Sử dụng đúng AES-128, PKCS#7 padding, IV ngẫu nhiên.
-- **Phản hồi**: Đúng vậy. Chúng tôi đã cài đặt `encrypt_aes_cbc` và `decrypt_aes_cbc` theo đúng chuẩn AES-128 CBC với PKCS#7 padding. IV được sinh ngẫu nhiên cho mỗi lần mã hóa nhằm tăng tính bảo mật.
+- Thành viên 1: Vũ Đức Sơn
+- Thành viên 2: Nguyễn Gia Huân
 
-### 3. Về kiểm thử
-- **Nhận xét**: Có đủ test cho happy path, wrong key, tamper ciphertext.
-- **Phản hồi**: Chúng tôi đã bổ sung đầy đủ 7 test cases bao gồm các trường hợp hợp lệ và lỗi như wrong key, modified ciphertext, timeout và invalid data. Tất cả test đều pass và đã được lưu lại trong report.
+## Mục tiêu
+//hihahaa
+Phạm Anh Quân : Bài lab nhằm xây dựng hệ thống gửi và nhận dữ liệu qua socket TCP với mã hóa AES-CBC. Hệ thống tách biệt hai kênh truyền: **key channel** để gửi AES key và IV, **data channel** để gửi ciphertext. Sinh viên hiểu được luồng hoạt động của mã hóa đối xứng trong ứng dụng mạng, cách sử dụng PKCS#7 padding, length header, và phân tích các điểm yếu bảo mật khi key được gửi ở dạng plaintext.
 
-### 4. Về Threat Model
-- **Nhận xét**: Đã chỉ ra key disclosure, tampering, replay attack.
-- **Phản hồi**: Cảm ơn góp ý. Nhóm đã phân tích đầy đủ các assets cần bảo vệ, các threats phổ biến, biện pháp giảm thiểu (mitigations) và residual risks còn tồn tại trong hệ thống.
+## Phân công thực hiện
 
-### 5. Cải thiện đề xuất
-- **Nhận xét**: Nên thêm xác thực (AES-GCM) thay vì CBC.
-- **Phản hồi**: Đồng ý. Trong thực tế, AES-GCM sẽ phù hợp hơn vì vừa hỗ trợ mã hóa vừa đảm bảo tính toàn vẹn và xác thực dữ liệu, giúp hạn chế các nguy cơ tampering.
+| Vai trò | Phụ trách chính |
+|---------|----------------|
+| **Sender** (mã hóa, key channel, data channel) | Vũ Đức Sơn|
+| **Receiver** (giải mã, nhận packet, xử lý lỗi) | Nguyễn Gia Huân |
+| **Test cases** (pytest, wrong key, tamper) | Cả hai |
+| **Log & Minh chứng** | Vũ Đức Sơn |
+| **Threat model** | Nguyễn Gia Huân |
+| **Báo cáo & Phần chung** | Cả hai |
+
+## Cách làm
+
+
+### 1. Sender (Vũ Đức Sơn thực hiện)
+- Đọc dữ liệu từ biến môi trường `MESSAGE` hoặc file `INPUT_FILE`
+- Sinh AES key (16 byte) và IV (16 byte) ngẫu nhiên
+- Mã hóa plaintext bằng AES-CBC, thêm PKCS#7 padding
+- Xây dựng **key packet**: `[key_length:4 bytes][key:16][iv:16]`
+- Xây dựng **data packet**: `[ciphertext_length:4 bytes][ciphertext:N]`
+- Gửi lần lượt qua KEY_PORT và DATA_PORT
+
+### 2. Receiver (Nguyễn Gia Huân thực hiện)
+- Lắng nghe trên KEY_PORT và DATA_PORT (chạy trước)
+- Nhận key packet bằng hàm `recv_exact()` (đọc đủ 4 byte length header, sau đó đọc đúng số byte data)
+- Parse key packet để lấy key và IV
+- Nhận data packet tương tự, parse lấy ciphertext
+- Giải mã bằng AES-CBC, bỏ padding, xuất plaintext ra màn hình hoặc file `OUTPUT_FILE`
+
+### 3. Xử lý lỗi và test (Cả hai)
+- **Wrong key test**: dùng sai key → giải mã thất bại (lỗi padding hoặc ra dữ liệu sai)
+- **Tamper test**: sửa 1 byte ciphertext → giải mã lỗi hoặc ra plaintext sai
+- **Padding test**: kiểm tra đúng PKCS#7
+- **Packet format test**: kiểm tra length header đúng cấu trúc
+
+
+## Kết quả
+
+### Chạy thành công với biến môi trường
+```bash
+# Terminal 1 - Receiver
+RECEIVER_HOST=127.0.0.1 KEY_PORT=6001 DATA_PORT=6000 python receiver.py
+
+# Terminal 2 - Sender
+SERVER_IP=127.0.0.1 KEY_PORT=6001 DATA_PORT=6000 MESSAGE="Xin chao FIT4012" python sender.py
+## Kết quả
+
+Vũ Đức Sơn : Tóm tắt kết quả chạy, log minh chứng, output nhận được và các test quan trọng.
+Hệ thống Sender và Receiver hoạt động ổn định trên localhost thông qua giao thức TCP socket. Sender thực hiện mã hóa plaintext bằng AES-CBC với khóa AES và IV được sinh ngẫu nhiên, sau đó gửi key packet và data packet qua hai cổng riêng biệt. Receiver nhận đúng packet, parse dữ liệu thành công và giải mã lại chính xác nội dung ban đầu.
+// hd
+Trong quá trình kiểm thử:
+
+Chương trình gửi và nhận thành công với nhiều dữ liệu có độ dài khác nhau.
+Receiver hiển thị đúng plaintext sau khi giải mã.
+Wrong key test làm dữ liệu giải mã bị lỗi hoặc xuất hiện lỗi padding.
+Tamper test cho thấy chỉ cần thay đổi 1 byte ciphertext thì plaintext nhận được sẽ sai hoặc không giải mã được.
+Packet length header hoạt động đúng, giúp Receiver đọc đủ dữ liệu và tránh mất packet.
 
 ## Kết luận
 
-Nhóm đã hoàn thành đầy đủ yêu cầu của lab, bao gồm:
-- Mã nguồn sender/receiver
-- Mã hóa AES-CBC
-- Test cases và log
-- Report và threat model
-- Peer review response
-
-Thông qua bài lab này, nhóm hiểu rõ hơn về lập trình socket, mã hóa đối xứng và các vấn đề bảo mật trong truyền dữ liệu qua mạng.
+Nguyễn Gia Huân : Rút ra bài học kỹ thuật và bài học bảo mật từ bài lab.
+Qua bài lab, nhóm hiểu được cách triển khai AES-CBC trong ứng dụng socket TCP thực tế, bao gồm quy trình sinh khóa, padding dữ liệu, mã hóa, truyền packet và giải mã. Bài lab cũng cho thấy tầm quan trọng của việc bảo vệ khóa bí mật trong truyền thông mạng. Việc gửi AES key dưới dạng plaintext là một điểm yếu lớn vì attacker có thể nghe lén và giải mã toàn bộ dữ liệu. Từ đó, nhóm nhận thấy cần kết hợp thêm các cơ chế như RSA, Diffie-Hellman hoặc TLS để trao đổi khóa an toàn hơn trong hệ thống thực tế.
