@@ -11,6 +11,7 @@ from aes_socket_utils import (
     decrypt_aes_cbc
 )
 
+
 RECEIVER_HOST = os.getenv("RECEIVER_HOST", "127.0.0.1")
 DATA_PORT = int(os.getenv("DATA_PORT", "6000"))
 KEY_PORT = int(os.getenv("KEY_PORT", "6001"))
