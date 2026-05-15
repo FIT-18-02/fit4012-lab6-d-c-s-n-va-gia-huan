@@ -7,8 +7,8 @@
 - Thành viên 2: Nguyễn Gia Huân
 
 ## Mục tiêu
-//hihahaa
-Phạm Anh Quân : Bài lab nhằm xây dựng hệ thống gửi và nhận dữ liệu qua socket TCP với mã hóa AES-CBC. Hệ thống tách biệt hai kênh truyền: **key channel** để gửi AES key và IV, **data channel** để gửi ciphertext. Sinh viên hiểu được luồng hoạt động của mã hóa đối xứng trong ứng dụng mạng, cách sử dụng PKCS#7 padding, length header, và phân tích các điểm yếu bảo mật khi key được gửi ở dạng plaintext.
+//sh
+cả hai : Bài lab nhằm xây dựng hệ thống gửi và nhận dữ liệu qua socket TCP với mã hóa AES-CBC. Hệ thống tách biệt hai kênh truyền: **key channel** để gửi AES key và IV, **data channel** để gửi ciphertext. Sinh viên hiểu được luồng hoạt động của mã hóa đối xứng trong ứng dụng mạng, cách sử dụng PKCS#7 padding, length header, và phân tích các điểm yếu bảo mật khi key được gửi ở dạng plaintext.
 
 ## Phân công thực hiện
 
