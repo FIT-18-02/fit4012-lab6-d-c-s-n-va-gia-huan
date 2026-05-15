@@ -17,8 +17,8 @@ Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 
 
 ## Team members
 
-- **Thành viên 1**: Phạm Hoàng Hải - MSSV: 1871020214
-- **Thành viên 2**: Trần Hữu Tiến Duy - MSSV: 1871020191
+- **Thành viên 1**: Vũ Đức Sơn - MSSV: 1871020507
+- **Thành viên 2**: Nguyễn Gia Huân - MSSV: 1871020264
 
 ## Task division
 
@@ -28,8 +28,8 @@ Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 
 
 ## Demo roles
 //hd
-- **Demo Sender / kênh khóa / log gửi**: Phạm Hoàng Hải
-- **Demo Receiver / kênh dữ liệu / giải mã**: Trần Hữu Tiến Duy
+- **Demo Sender / kênh khóa / log gửi**: Vũ Đức Sơn
+- **Demo Receiver / kênh dữ liệu / giải mã**: Nguyễn Gia Huân
 - **Cả hai cùng trả lời threat model và ethics**: Cả nhóm cùng thực hiện
 
 ---
