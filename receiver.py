@@ -1,96 +1,84 @@
-import sys
-import io
 import os
 import socket
 from pathlib import Path
 
-# Fix lỗi Unicode để in tiếng Việt có dấu chính xác trên CI/CD
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
+# Đảm bảo file aes_socket_utils.py đã có đủ các hàm này
 from aes_socket_utils import (
-    LENGTH_HEADER_SIZE,
-    decrypt_aes_cbc,
     parse_key_packet,
     parse_length_header,
     recv_exact,
+    decrypt_aes_cbc
 )
 
-HOST = os.getenv("RECEIVER_HOST", "0.0.0.0")
+RECEIVER_HOST = os.getenv("RECEIVER_HOST", "127.0.0.1")
 DATA_PORT = int(os.getenv("DATA_PORT", "6000"))
 KEY_PORT = int(os.getenv("KEY_PORT", "6001"))
-TIMEOUT = float(os.getenv("SOCKET_TIMEOUT", "10"))
-OUTPUT_FILE = os.getenv("OUTPUT_FILE", "")
+OUTPUT_FILE = os.getenv("OUTPUT_FILE", "sample_output.txt")
 LOG_FILE = os.getenv("RECEIVER_LOG_FILE", "")
+TIMEOUT = float(os.getenv("SOCKET_TIMEOUT", "10"))
 
-def receive_key_packet() -> bytes:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind((HOST, KEY_PORT))
-        server.listen(1)
-        # In thông báo để script test bắt đầu chạy sender.py
-        print(f"[*] Receiver đang lắng nghe kênh khóa tại {HOST}:{KEY_PORT}", flush=True)
-        conn, _ = server.accept()
-        with conn:
-            conn.settimeout(TIMEOUT)
-            key_len_header = recv_exact(conn, 4)
-            key_len = int.from_bytes(key_len_header, "big")
-            rest = recv_exact(conn, key_len + 16)
-            return key_len_header + rest
+def run_receiver():
+    # Giữ đúng từ khóa "đang" để file test nhận diện receiver đã sẵn sàng
+    print(f"--- [RECEIVER] Đang lắng nghe tại {RECEIVER_HOST} ---")
 
-def receive_data_packet() -> bytes:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind((HOST, DATA_PORT))
-        server.listen(1)
-        print(f"[*] Receiver đang lắng nghe kênh dữ liệu tại {HOST}:{DATA_PORT}", flush=True)
-        conn, _ = server.accept()
-        with conn:
-            conn.settimeout(TIMEOUT)
-            length_header = recv_exact(conn, LENGTH_HEADER_SIZE)
-            length = parse_length_header(length_header)
-            ciphertext = recv_exact(conn, length)
-            return length_header + ciphertext
+    key_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    data_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def main() -> None:
-    lines = []
+    try:
+        key_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        data_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    # Bước 1: Nhận Key
-    key_packet = receive_key_packet()
-    key, iv = parse_key_packet(key_packet)
-    line1 = "[+] Đã nhận AES key và IV."
-    print(line1, flush=True)
-    lines.append(line1)
+        key_server.bind((RECEIVER_HOST, KEY_PORT))
+        data_server.bind((RECEIVER_HOST, DATA_PORT))
 
-    # Bước 2: Nhận Data
-    data_packet = receive_data_packet()
-    length = parse_length_header(data_packet[:LENGTH_HEADER_SIZE])
-    ciphertext = data_packet[LENGTH_HEADER_SIZE:]
+        key_server.listen(1)
+        data_server.listen(1)
 
-    if len(ciphertext) != length:
-        raise ValueError("Ciphertext nhận được không khớp length header.")
+        print(f"[*] Chờ kết nối Kênh Khóa (Cổng {KEY_PORT})...")
+        print(f"[*] Chờ kết nối Kênh Dữ liệu (Cổng {DATA_PORT})...")
 
-    line2 = "[+] Đã nhận ciphertext."
-    print(line2, flush=True)
-    lines.append(line2)
+        # 1. Nhận KEY CHANNEL
+        conn_key, _ = key_server.accept()
+        with conn_key:
+            conn_key.settimeout(TIMEOUT)
+            header = recv_exact(conn_key, 4)
+            key_len = parse_length_header(header)
+            packet = header + recv_exact(conn_key, key_len + 16)
+            key, iv = parse_key_packet(packet)
+        print("[OK] Đã nhận Key và IV thành công.")
 
-    # Giải mã
-    plaintext = decrypt_aes_cbc(key, iv, ciphertext)
-    message = plaintext.decode("utf-8", errors="replace")
+        # 2. Nhận DATA CHANNEL
+        conn_data, _ = data_server.accept()
+        with conn_data:
+            conn_data.settimeout(TIMEOUT)
+            header_data = recv_exact(conn_data, 4)
+            ciphertext_len = parse_length_header(header_data)
+            ciphertext = recv_exact(conn_data, ciphertext_len)
+        print(f"[OK] Đã nhận bản mã ({ciphertext_len} bytes).") #hieuquan
 
-    success_msg = "[+] Đã giải mã thành công."
-    plain_msg = f"[+] Bản tin gốc: {message}"
-    print(success_msg, flush=True)
-    print(plain_msg, flush=True)
+        # 3. Giải mã - QUAN TRỌNG: Phải in đúng cụm từ "[+] Bản tin gốc:"
+        plaintext_bytes = decrypt_aes_cbc(key, iv, ciphertext)
+        plaintext_str = plaintext_bytes.decode("utf-8")
 
-    lines.extend([success_msg, plain_msg])
+        print(f"[+] Bản tin gốc: {plaintext_str}")
 
-    if OUTPUT_FILE:
-        Path(OUTPUT_FILE).write_bytes(plaintext)
+        Path(OUTPUT_FILE).write_text(plaintext_str, encoding="utf-8")
 
-    if LOG_FILE:
-        Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
-        Path(LOG_FILE).write_text("\n".join(lines) + "\n", encoding="utf-8")
+        if LOG_FILE:
+            log_path = Path(LOG_FILE)
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_content = f"[+] Bản tin gốc: {plaintext_str}\n"
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(log_content) #hieuquan
+#hd
+    except Exception as e:
+        print(f"[!] Lỗi: {e}")
+
+    finally:
+        key_server.close()
+        data_server.close()
+        print("[*] Đã đóng các kết nối Server.")
 
 if __name__ == "__main__":
-    main()
+    run_receiver()
