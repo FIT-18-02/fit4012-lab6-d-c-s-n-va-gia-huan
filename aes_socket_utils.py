@@ -4,7 +4,6 @@ import struct
 from typing import Tuple
 from Crypto.Cipher import AES
 
-
 # ==================================================
 # Cấu hình hệ thống
 # ==================================================
