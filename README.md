@@ -1,6 +1,7 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/pP7_NUvP)
 # FIT4012 - Lab 6 - Hệ thống gửi và nhận dữ liệu mã hóa AES-CBC qua Socket
 
+
 Repo starter kit này dùng cho **Lab 6**: gửi và nhận dữ liệu mã hóa bằng **AES-CBC** qua **TCP socket**.
 
 Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 2 hướng:
@@ -13,22 +14,24 @@ Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 
 > Lưu ý quan trọng: kênh khóa trong bài này chỉ là mô phỏng học tập. Key và IV vẫn được gửi plaintext, vì vậy thiết kế này **không an toàn để dùng trong hệ thống thật**.
 
 ---
+
 ## Team members
 
-- **Thành viên 1**: Nguyễn Gia Huân - MSSV: 1871020262
-- **Thành viên 2**: Vũ Đức Sơn - MSSV: 1871020507
+- **Thành viên 1**: Phạm Hoàng Hải - MSSV: 1871020214
+- **Thành viên 2**: Trần Hữu Tiến Duy - MSSV: 1871020191
 
 ## Task division
 
-- **Thành viên 1 phụ trách chính**: Viết script Sender, xử lý AES encryption, tạo header socket.
-- **Thành viên 2 phụ trách chính**: Viết script Receiver, xử lý giải mã, viết unit tests.
-- **Phần làm chung**: Phân tích Threat model và viết báo cáo.
+- **Thành viên 1 phụ trách chính**: Cài đặt logic `sender.py`, quản lý KEY_PORT và xây dựng hàm mã hóa trong `aes_socket_utils.py`.
+- **Thành viên 2 phụ trách chính**: Cài đặt logic `receiver.py`, quản lý DATA_PORT và thực hiện giải mã dữ liệu.
+- **Phần làm chung**: Thiết kế kịch bản kiểm thử (tests), viết báo cáo và phân tích mô hình đe dọa.
 
 ## Demo roles
+//hd
+- **Demo Sender / kênh khóa / log gửi**: Phạm Hoàng Hải
+- **Demo Receiver / kênh dữ liệu / giải mã**: Trần Hữu Tiến Duy
+- **Cả hai cùng trả lời threat model và ethics**: Cả nhóm cùng thực hiện
 
-- **Demo Sender / kênh khóa / log gửi**: Nguyễn Gia Huân
-- **Demo Receiver / kênh dữ liệu / giải mã**: Vũ Đức Sơn
-- **Cả hai cùng trả lời threat model và ethics**: Cả hai
 ---
 
 ## Mục tiêu học tập
@@ -60,161 +63,3 @@ Sau bài lab này, sinh viên có thể:
 ├── logs/
 ├── tests/
 └── .github/workflows/ci.yml
-```
-
----
-
-## Protocol
-
-### 1. Key channel
-
-Sender gửi AES key và IV qua `KEY_PORT`.
-
-```text
-[key_length: 4 bytes][key: 16 hoặc 32 bytes][iv: 16 bytes]
-```
-
-### 2. Data channel
-
-Sender gửi ciphertext qua `DATA_PORT`.
-
-```text
-[ciphertext_length: 4 bytes][ciphertext: N bytes]
-```
-
----
-
-## Cài đặt môi trường
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
----
-
-## Chạy demo local
-
-### Terminal 1 - Receiver
-
-```bash
-RECEIVER_HOST=127.0.0.1 DATA_PORT=6000 KEY_PORT=6001 python receiver.py
-```
-
-### Terminal 2 - Sender
-
-```bash
-SERVER_IP=127.0.0.1 DATA_PORT=6000 KEY_PORT=6001 MESSAGE="Xin chao FIT4012 - Lab 6 AES Socket" python sender.py
-```
-
----
-
-## Chạy có log minh chứng
-
-Terminal 1:
-
-```bash
-RECEIVER_HOST=127.0.0.1 \
-DATA_PORT=6000 \
-KEY_PORT=6001 \
-RECEIVER_LOG_FILE=logs/receiver_success.log \
-OUTPUT_FILE=sample_output.txt \
-python receiver.py
-```
-
-Terminal 2:
-
-```bash
-SERVER_IP=127.0.0.1 \
-DATA_PORT=6000 \
-KEY_PORT=6001 \
-MESSAGE="Xin chao FIT4012 - Lab 6 AES Socket" \
-SENDER_LOG_FILE=logs/sender_success.log \
-python sender.py
-```
-
----
-
-## Gửi dữ liệu từ file
-
-Terminal 1:
-
-```bash
-RECEIVER_HOST=127.0.0.1 DATA_PORT=6000 KEY_PORT=6001 OUTPUT_FILE=sample_output.txt python receiver.py
-```
-
-Terminal 2:
-
-```bash
-SERVER_IP=127.0.0.1 DATA_PORT=6000 KEY_PORT=6001 INPUT_FILE=sample_input.txt python sender.py
-```
-
----
-
-## Chạy test
-
-```bash
-pytest -q
-```
-
----
-
-## Deliverables bắt buộc
-
-- `README.md`
-- `sender.py`
-- `receiver.py`
-- `aes_socket_utils.py`
-- `tests/`
-- `logs/`
-- `report-1page.md`
-- `threat-model-1page.md`
-- `sample_input.txt`
-- `sample_output.txt`
-
----
-
-## Submission contract cho CI
-
-CI sẽ kiểm tra:
-
-- Có đủ file bắt buộc.
-- Không còn import `DES`.
-- Có sử dụng `AES`.
-- Có ít nhất 6 test.
-- Có test padding.
-- Có test key channel.
-- Có test data channel.
-- Có test wrong key.
-- Có test tamper.
-- Có test local sender-receiver.
-- README có thông tin nhóm 2 người.
-- Các file báo cáo không còn `TODO_STUDENT`.
-- Có ít nhất 1 file log thật trong `logs/`.
-
----
-
-## Ethics & Safe use
-
-- Chỉ chạy demo trên máy cá nhân, VM hoặc mạng nội bộ phục vụ học tập.
-- Không quét cổng hoặc thử nghiệm trên hệ thống không được phép.
-- Không dùng dữ liệu cá nhân thật hoặc dữ liệu nhạy cảm để demo.
-- Không trình bày hệ thống này như một giải pháp an toàn sẵn sàng triển khai thực tế.
-- Nếu tham khảo code/tài liệu, hãy ghi nguồn rõ ràng.
-
----
-
-## Bài học chính
-
-Một hệ thống có mã hóa chưa chắc đã là một hệ thống an toàn.
-
-AES-CBC giúp che nội dung plaintext, nhưng chưa tự động đảm bảo xác thực, toàn vẹn, chống replay hay bảo vệ key.
