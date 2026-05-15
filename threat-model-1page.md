@@ -1,26 +1,42 @@
 # Threat Model - Lab 6 AES-CBC Socket
 
 ## Thông tin nhóm
-- Thành viên 1: Nguyễn Gia Huân(1871020264)
-- Thành viên 2: Vũ Đức Sơn (1871020507)
+
+- Thành viên 1: Vũ Đức Sơn - MSSV: 1871020507
+- Thành viên 2: Nguyễn Gia Huân - MSSV: 1871020264
+
 
 ## Assets
-- Plaintext (Nội dung bản tin gốc cần bảo mật).
-- Khóa AES (16/32 bytes) và IV (16 bytes).
-- Ciphertext truyền trên mạng.
+//sh
+Các tài sản quan trọng cần bảo vệ bao gồm:
+- **Bản rõ (Plaintext)**: Nội dung thông tin gốc chứa trong file `sample_input.txt` hoặc biến môi trường.
+- **Khóa AES (Key) & IV**: Thành phần then chốt để thực hiện mã hóa và giải mã AES-128.
+- **Bản mã (Ciphertext)**: Dữ liệu đã được mã hóa truyền qua DATA_PORT.
+- **Dữ liệu Log**: Các file ghi chép tiến trình hoạt động của hệ thống trong thư mục `logs/`.
 
 ## Attacker model
-Kẻ tấn công Man-in-the-Middle (MitM) nằm trong cùng mạng LAN, có công cụ dò quét cổng và khả năng bắt gói tin (sniffing) bằng Wireshark. Có khả năng sửa đổi nội dung luồng TCP byte stream.
+//sh
+Đối tượng tấn công giả định trong bài Lab này là:
+- Kẻ tấn công có khả năng nghe lén (Eavesdropping) trên mạng nội bộ (LAN) để bắt các gói tin TCP.
+- Có khả năng can thiệp, sửa đổi (Tampering) gói tin bản mã trên đường truyền.
+- Có thể thực hiện gửi lại các gói tin cũ (Replay attack) hoặc truy cập trái phép vào các file log nếu hệ thống không được phân quyền tốt.
 
 ## Threats
-- **Key disclosure**: Khóa AES và IV đang được gửi hoàn toàn bằng plaintext qua `KEY_PORT`. Kẻ tấn công bắt được luồng này có thể giải mã lập tức `DATA_PORT`.
-- **Tampering**: AES-CBC không có cơ chế xác thực toàn vẹn. Kẻ tấn công có thể lật bit (bit-flipping) của ciphertext, làm sai lệch plaintext khi Receiver giải mã.
-- **Replay attack**: Kẻ tấn công có thể chụp lại toàn bộ gói tin data và key, sau đó gửi lại cho Receiver (Replay) để kích hoạt lại một hành động trái phép.
+
+Hệ thống hiện tại đối mặt với các mối đe dọa cụ thể sau:
+- **Lộ khóa (Key disclosure)**: Do cơ chế KEY_PORT hiện tại gửi Key và IV dưới dạng văn bản rõ (plaintext), kẻ tấn công bắt được gói tin này sẽ vô hiệu hóa hoàn toàn lớp bảo mật AES.
+- **Giả mạo dữ liệu (Tampering)**: Chế độ AES-CBC chỉ đảm bảo tính bí mật, không đảm bảo tính toàn vẹn. Kẻ tấn công có thể thay đổi bit trong ciphertext, khiến Receiver giải mã ra dữ liệu sai lệch.
+- **Thiếu xác thực (No authentication)**: Receiver không có cơ chế kiểm tra định danh của Sender, dẫn đến rủi ro bất kỳ ai cũng có thể gửi dữ liệu giả mạo tới Receiver.
+- **Lộ thông tin qua Log (Log leakage)**: Nếu các hàm hiển thị ghi trực tiếp giá trị Key/IV vào log file mà không được bảo vệ, kẻ tấn công có thể lấy được khóa từ lịch sử hệ thống.
 
 ## Mitigations
-- Không gửi key dưới dạng plaintext. Cần sử dụng thuật toán trao đổi khóa an toàn (Diffie-Hellman) hoặc bao bọc toàn bộ kết nối bằng TLS/SSL.
-- Thay thế AES-CBC bằng AES-GCM (Authenticated Encryption with Associated Data) để phát hiện ngay lập tức nếu ciphertext bị chỉnh sửa (Tampering).
-- Bổ sung Timestamp hoặc Nonce, Sequence number vào gói tin để hệ thống từ chối các gói tin cũ (chống Replay attack).
+//sonhuan
+Các biện pháp nhằm giảm thiểu rủi ro cho hệ thống:
+- **Mã hóa kênh truyền**: Trong thực tế, cần sử dụng giao thức TLS/SSL để mã hóa toàn bộ luồng dữ liệu socket.
+- **Trao đổi khóa an toàn**: Thay vì gửi Key/IV trực tiếp, cần sử dụng RSA (mã hóa bất đối xứng) hoặc Diffie-Hellman để trao đổi khóa an toàn.
+- **Xác thực và Toàn vẹn**: Chuyển sang sử dụng AES-GCM (Authenticated Encryption) để vừa mã hóa vừa đảm bảo dữ liệu không bị sửa đổi.
+- **Quản lý Log**: Không ghi các giá trị nhạy cảm như Key thực vào log trong môi trường sản xuất; chỉ ghi mã băm (hash) hoặc trạng thái thành công/thất bại.
 
 ## Residual risks
-Hiện tại hệ thống vẫn đang ở mức "mô phỏng học tập". Rủi ro còn lại là cực kỳ cao (Critical) vì kênh khóa hoàn toàn không được bảo vệ. Kẻ gian không cần phá mã AES mà chỉ cần nghe lén port 6001 là lấy được chìa khóa.
+
+Rủi ro còn lại lớn nhất là hệ thống vẫn chưa an toàn tuyệt đối vì Kênh Khóa (Key channel) trong bài Lab này chỉ mang tính chất mô phỏng học tập. Hệ thống hiện vẫn thiếu cơ chế xác thực Sender/Receiver và chưa có lớp bảo vệ chống tấn công phát lại (Replay attack) một cách đầy đủ.
