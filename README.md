@@ -4,6 +4,7 @@
 
 Repo starter kit này dùng cho **Lab 6**: gửi và nhận dữ liệu mã hóa bằng **AES-CBC** qua **TCP socket**.
 
+
 Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 2 hướng:
 
 1. Chuyển từ **DES-CBC** sang **AES-CBC**.
